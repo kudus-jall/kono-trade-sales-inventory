@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Sales returns{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">CUSTOMER RETURNS</div><h1>Sales returns</h1><p class="muted">Record returned quantities, stock condition and the financial adjustment.</p></div></div>
+<section class="content-grid content-grid-form">
+  <article class="panel"><div class="panel-heading"><h2>Record return</h2></div>
+    {% if sales %}<form method="post" class="form-stack">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="request_key" value="{{ request_key }}">
+      <label>Original sale *<select name="sale_id" required>{% for sale in sales %}<option value="{{ sale.id }}">{{ sale.reference }} · {{ sale.product_name }} · {{ sale.returnable|quantity }} {{ sale.unit }} returnable · {{ sale.customer_name or "Walk-in" }}</option>{% endfor %}</select></label>
+      <label>Quantity returned *<input name="quantity" type="number" step="0.001" min="0.001" required></label>
+      <label>Condition *<select name="condition" required><option value="resellable">Resellable</option><option value="damaged">Damaged</option><option value="unusable">Unusable</option></select></label>
+      <label>Adjustment *<select name="adjustment_type" required><option value="refund">Cash / payment refund</option><option value="debt_adjustment">Reduce customer debt</option><option value="replacement">Replace with same product and quantity</option></select></label>
+      <label>Refund method<select name="method">{% for method in ['Cash', 'Orange Money', 'Mobile Money', 'Bank Transfer', 'Other'] %}<option>{{ method }}</option>{% endfor %}</select></label>
+      <label>Reason *<textarea name="reason" rows="3" required></textarea></label>
+      <button class="button button-primary" type="submit">Record return</button>
+    </form>{% else %}<div class="empty-state">There are no completed sales with returnable quantities.</div>{% endif %}
+  </article>
+  <article class="panel"><div class="panel-heading"><h2>Return rules</h2></div>
+    <ul class="plain-list">
+      <li>Resellable goods return to available stock. Damaged and unusable goods do not.</li>
+      <li>Refunds are capped at recorded customer receipts; returned value is prorated from the original sale after discount.</li>
+      <li>Debt adjustments require a registered customer with enough outstanding balance.</li>
+      <li>Replacement issues the same product and quantity. If returned goods are damaged, available stock is required.</li>
+    </ul>
+  </article>
+</section>
+<section class="panel section-gap"><div class="panel-heading"><h2>Return history</h2></div>
+  {% if returns %}<div class="table-wrap"><table><thead><tr><th>Return</th><th>Sale</th><th>Product</th><th>Quantity</th><th>Condition</th><th>Adjustment</th><th>Amount</th><th>Reason</th></tr></thead><tbody>
+    {% for item in returns %}<tr><td>{{ item.reference }}</td><td>{{ item.sale_reference }}</td><td>{{ item.product_name }}</td><td>{{ item.quantity|quantity }} {{ item.unit }}</td><td>{{ item.condition }}</td><td>{{ item.adjustment_type|replace('_', ' ') }}</td><td>{{ item.amount_minor|money }}</td><td>{{ item.reason }}<small>{{ item.recorded_by }} · {{ item.created_at[:10] }}</small></td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty-state">Return history will appear here.</div>{% endif %}
+</section>
+{% endblock %}

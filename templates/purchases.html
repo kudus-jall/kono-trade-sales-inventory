@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Purchases{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">INVENTORY IN</div><h1>Purchases</h1><p class="muted">Purchases add stock and update weighted average unit cost.</p></div></div>
+<section class="panel"><div class="panel-heading"><h2>Record a purchase</h2></div>
+  {% if products %}<form method="post" class="form-grid form-grid-compact"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="request_key" value="{{ request_key }}">
+    <label>Product and purchase unit *<select name="purchase_unit_id" required>{% for item in purchase_units %}<option value="{{ item.id }}">{{ item.product_name }} · {{ item.unit_name }}{% if item.unit_name != item.base_unit %} ({{ item.to_base_factor }} {{ item.base_unit }}){% endif %}</option>{% endfor %}</select></label>
+    <label>Supplier<select name="supplier_id"><option value="">No supplier selected</option>{% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></label>
+    <label>Quantity *<input name="quantity" type="number" step="0.001" min="0.001" required></label><label>Unit cost *<input name="unit_cost" type="number" step="0.01" min="0" required></label>
+    <label>Amount paid now<input name="paid" type="number" step="0.01" min="0" value="0"></label><label>Supplier payment due date<input name="due_date" type="date"><small>Optional; reminders are shown in-app to the owner.</small></label><label>Payment method<select name="method">{% for method in ['Cash', 'Orange Money', 'Mobile Money', 'Bank Transfer', 'Other'] %}<option>{{ method }}</option>{% endfor %}</select></label>
+    <button class="button button-primary form-full" type="submit">Record purchase</button>
+  </form>{% else %}<div class="empty-state">Add a product before recording a purchase. <a href="{{ url_for('products') }}">Open products →</a></div>{% endif %}
+</section>
+<section class="panel section-gap"><div class="panel-heading"><div><h2>Purchase history</h2><p class="muted">Recent stock receipts</p></div></div>
+  {% if purchases %}<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Product</th><th>Supplier</th><th>Quantity</th><th>Total</th><th>Paid</th><th>Date</th></tr></thead><tbody>{% for p in purchases %}<tr><td>{{ p.reference }}</td><td>{{ p.product_name }}</td><td>{{ p.supplier_name or "—" }}</td><td>{{ p.quantity|quantity }} {{ p.purchase_unit }}</td><td class="amount">{{ p.total_minor|money }}</td><td>{{ p.paid_minor|money }}</td><td>{{ p.created_at[:16].replace('T', ' ') }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">No purchases recorded yet.</div>{% endif %}
+</section>
+{% endblock %}

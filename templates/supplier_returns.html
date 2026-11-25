@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Supplier returns{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">PURCHASING</div><h1>Supplier returns</h1><p class="muted">Return stock against its original supplier purchase with a recorded settlement and reason.</p></div></div>
+<section class="content-grid content-grid-form">
+  <article class="panel"><div class="panel-heading"><h2>Record return</h2></div>
+    {% if purchases %}<form method="post" class="form-stack">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="request_key" value="{{ request_key }}">
+      <label>Original purchase *<select name="purchase_id" required>{% for purchase in purchases %}<option value="{{ purchase.id }}">{{ purchase.reference }} · {{ purchase.product_name }} · {{ purchase.supplier_name }} · {{ purchase.returnable|quantity }} {{ purchase.unit_name }} returnable</option>{% endfor %}</select></label>
+      <label>Quantity returned *<input name="quantity" type="number" step="0.001" min="0.001" required></label>
+      <label>Adjustment *<select name="adjustment_type" required><option value="refund">Cash refund</option><option value="debt_adjustment">Reduce supplier debt</option><option value="replacement">Replacement stock</option></select></label>
+      <label>Refund method<select name="method">{% for method in ['Cash', 'Orange Money', 'Mobile Money', 'Bank Transfer', 'Other'] %}<option>{{ method }}</option>{% endfor %}</select></label>
+      <label>Reason *<textarea name="reason" rows="3" required maxlength="500"></textarea></label>
+      <button class="button button-primary" type="submit">Record supplier return</button>
+    </form>{% else %}<div class="empty-state">There are no supplier purchases with remaining returnable quantities.</div>{% endif %}
+  </article>
+  <article class="panel"><div class="panel-heading"><h2>Settlement rules</h2></div><ul class="plain-list">
+    <li>Returnable quantities are capped by the original purchase less previous returns and must be in stock.</li>
+    <li>Debt adjustments reduce the supplier payable. Refunds are recorded as incoming payments and capped by supplier payments previously recorded.</li>
+    <li>Replacement returns exchange stock without reducing the original purchase payable.</li>
+  </ul></article>
+</section>
+<section class="panel section-gap"><div class="panel-heading"><h2>Supplier return history</h2></div>
+  {% if returns %}<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Purchase</th><th>Supplier</th><th>Product</th><th>Quantity</th><th>Adjustment</th><th>Value</th><th>Reason</th></tr></thead><tbody>
+    {% for item in returns %}<tr><td><a href="{{ url_for('supplier_return_receipt', return_id=item.id) }}">{{ item.reference }}</a></td><td>{{ item.purchase_reference }}</td><td>{{ item.supplier_name }}</td><td>{{ item.product_name }}</td><td>{{ item.quantity|quantity }} {{ item.unit_name }}</td><td>{{ item.adjustment_type|replace('_', ' ') }}</td><td>{{ item.amount_minor|money }}</td><td>{{ item.reason }}<small>{{ item.recorded_by }} · {{ item.created_at[:10] }}</small></td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty-state">Supplier returns will appear here.</div>{% endif %}
+</section>
+{% endblock %}

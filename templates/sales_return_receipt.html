@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Return {{ sale_return.reference }}{% endblock %}
+{% block content %}
+<div class="page-heading no-print"><div><div class="eyebrow">RETURN RECORD</div><h1>Return receipt</h1></div><div><a class="button button-quiet" href="{{ url_for('sales_return_receipt_pdf', return_id=sale_return.id) }}">Download PDF</a> <button class="button button-primary" onclick="window.print()">Print receipt</button></div></div>
+<article class="receipt">
+  <div class="receipt-head">{% if g.user.business_logo_filename %}<img class="receipt-logo" src="{{ url_for('business_logo') }}" alt="Business logo">{% else %}<div class="brand-mark">K</div>{% endif %}<h1>{{ g.user.business_name }}</h1><p>{{ g.user.business_address }}{% if g.user.business_address and g.user.business_phone %} · {% endif %}{{ g.user.business_phone }}</p></div>
+  <div class="receipt-meta"><span>Return <b>{{ sale_return.reference }}</b></span><span>{{ sale_return.created_at[:16].replace('T', ' ') }}</span></div>
+  <p><b>Original sale:</b> {{ sale_return.sale_reference }}<br><b>Customer:</b> {{ sale_return.customer_name or "Walk-in" }}<br><b>Product:</b> {{ sale_return.product_name }} · {{ sale_return.quantity|quantity }} {{ sale_return.unit }}<br><b>Condition:</b> {{ sale_return.condition }}<br><b>Adjustment:</b> {{ sale_return.adjustment_type|replace('_', ' ') }}<br><b>Reason:</b> {{ sale_return.reason }}<br><b>Recorded by:</b> {{ sale_return.recorded_by }}</p>
+  {% if sale_return.amount_minor %}<div class="receipt-totals"><div><span>Return adjustment</span><b>{{ sale_return.amount_minor|money }}</b></div></div>{% endif %}
+  <p class="receipt-thanks">Return recorded in the business activity history.</p>
+</article>
+{% endblock %}

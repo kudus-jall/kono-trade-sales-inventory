@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Suppliers{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">PURCHASING</div><h1>Suppliers</h1><p class="muted">Keep supplier details and amounts owed in view.</p></div><div><a class="button button-primary" href="{{ url_for('supplier_payments') }}">Record supplier payment</a> <a class="button button-quiet" href="{{ url_for('supplier_returns') }}">Record supplier return</a></div></div>
+<section class="content-grid content-grid-form">
+  <article class="panel"><div class="panel-heading"><h2>Add supplier</h2></div><form method="post" class="form-stack"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><label>Supplier name *<input name="name" required></label><label>Contact person<input name="contact_person"></label><label>Phone<input name="phone" type="tel"></label><label>Address<input name="address"></label><button class="button button-primary" type="submit">Add supplier</button></form></article>
+  <article class="panel"><div class="panel-heading"><div><h2>Supplier list</h2><p class="muted">{{ suppliers|length }} suppliers</p></div></div>
+    {% if suppliers %}<div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Contact</th><th>Phone</th><th>Balance</th></tr></thead><tbody>{% for supplier in suppliers %}<tr><td><b>{{ supplier.name }}</b><small>{{ supplier.address }}</small></td><td>{{ supplier.contact_person or "—" }}</td><td>{{ supplier.phone or "—" }}</td><td class="amount">{{ supplier.balance|money }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">Supplier records will appear here.</div>{% endif %}
+  </article>
+</section>
+{% endblock %}

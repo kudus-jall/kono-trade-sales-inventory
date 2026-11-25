@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Create business{% endblock %}
+{% block content %}
+<section class="auth-card auth-card-wide">
+  <div class="eyebrow">GET STARTED</div>
+  <h1>Create your business workspace</h1>
+  <p class="muted">Your first account becomes the business Owner/Admin.</p>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label>Business name *<input name="business_name" required></label>
+    <label>Business type *<input name="business_type" placeholder="e.g. Building materials" required></label>
+    <label>Owner name *<input name="owner_name" required></label>
+    <label>Phone number *<input name="phone" type="tel" required></label>
+    <label>Recovery email<input name="email" type="email" autocomplete="email"><small>Needed for password recovery</small></label>
+    <label>Username *<input name="username" autocomplete="username" required></label>
+    <label>Password *<input name="password" type="password" minlength="10" autocomplete="new-password" required><small>At least 10 characters</small></label>
+    <label>Preferred currency<select name="currency">{% for code, label in currencies.items() %}<option value="{{ code }}">{{ code }} · {{ label }}</option>{% endfor %}</select></label>
+    <label>Business address<input name="address"></label>
+    <button class="button button-primary button-wide form-full" type="submit">Create account</button>
+  </form>
+  <p class="auth-foot">Already registered? <a href="{{ url_for('login') }}">Sign in</a></p>
+</section>
+{% endblock %}

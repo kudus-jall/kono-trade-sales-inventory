@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">IN-APP ALERTS</div><h1>Notifications</h1><p class="muted">Operational and account reminders visible only to you.</p></div></div>
+<section class="panel">
+  {% if notifications %}<div class="notification-list">
+    {% for item in notifications %}<article class="notification-item {{ 'notification-unread' if not item.read_at else '' }}">
+      <div><span class="badge {{ 'badge-amber' if not item.read_at else 'badge-muted' }}">{{ item.type|replace('_', ' ') }}</span><h2>{{ item.title }}</h2><p>{{ item.message }}</p><small>{{ item.created_at[:16].replace('T', ' ') }}</small></div>
+      <div>{% if item.target_url %}<a class="button button-quiet" href="{{ item.target_url }}">Open</a>{% endif %}{% if not item.read_at %}<form method="post" action="{{ url_for('mark_notification_read', notification_id=item.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="link-button" type="submit">Mark read</button></form>{% endif %}</div>
+    </article>{% endfor %}
+  </div>{% else %}<div class="empty-state">You have no notifications.</div>{% endif %}
+  <p class="report-note">Delivery is in-app only. No email, SMS, or browser-push provider is configured.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><div class="eyebrow">{{ "OWNER DASHBOARD" if g.user.role == "owner" else "ATTENDANT DASHBOARD" }}</div><h1>Good day, {{ g.user.full_name.split()[0] }}</h1><p class="muted">{{ g.user.business_name }} · {{ today if today is defined else "Your business at a glance" }}</p></div>
+  <a class="button button-primary" href="{{ url_for('sales') }}">＋ Record a sale</a>
+</div>
+<section class="stat-grid">
+  <article class="stat-card"><span>{{ "Sales today" if g.user.role == "owner" else "Your sales today" }}</span><strong>{{ totals.sales|money }}</strong><small>{{ totals.sale_count }} completed sales</small></article>
+  {% if g.user.role == "owner" %}
+  <article class="stat-card"><span>Gross profit today</span><strong>{{ (totals.sales - totals.cost)|money }}</strong><small>Sales less product cost</small></article>
+  <article class="stat-card"><span>Expenses today</span><strong>{{ expenses|money }}</strong><small>Operating expenses recorded</small></article>
+  <article class="stat-card"><span>Customer balances</span><strong>{{ customer_debt|money }}</strong><small>Outstanding credit sales</small></article>
+  {% else %}
+  <article class="stat-card"><span>Products to watch</span><strong>{{ low_stock|length }}</strong><small>At or below reorder level</small></article>
+  <article class="stat-card"><span>Financial reports</span><strong>Restricted</strong><small>Owner/Admin access only</small></article>
+  {% endif %}
+</section>
+<section class="content-grid">
+  <article class="panel panel-large">
+    <div class="panel-heading"><div><h2>Recent sales</h2><p class="muted">Latest recorded transactions</p></div><a href="{{ url_for('sales') }}">View all →</a></div>
+    {% if recent_sales %}
+    <div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Product</th><th>Customer</th><th>Sold by</th><th>Total</th></tr></thead><tbody>
+      {% for sale in recent_sales %}{% if g.user.role == 'owner' or sale.user_id == g.user.id %}
+      <tr><td><a href="{{ url_for('receipt', sale_id=sale.id) }}">{{ sale.reference }}</a></td><td>{{ sale.product_name }} <small>{{ sale.quantity|quantity }} {{ sale.unit }}</small></td><td>{{ sale.customer_name or "Walk-in" }}</td><td>{{ sale.seller }}</td><td class="amount">{{ sale.total_minor|money }}</td></tr>
+      {% endif %}{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty-state">No sales recorded yet. Start by recording your first sale.</div>{% endif %}
+  </article>
+  <article class="panel">
+    <div class="panel-heading"><div><h2>Stock watch</h2><p class="muted">Items needing attention</p></div>{% if g.user.role == 'owner' %}<a href="{{ url_for('products') }}">Manage →</a>{% endif %}</div>
+    {% if low_stock %}
+      <ul class="stock-list">{% for product in low_stock[:8] %}<li><span><b>{{ product.name }}</b><small>{{ product.sku }}</small></span><span class="stock-low">{{ product.stock|quantity }} {{ product.unit }}<small>Reorder at {{ product.reorder_level|quantity }}</small></span></li>{% endfor %}</ul>
+    {% else %}<div class="empty-state">No low-stock products to show.</div>{% endif %}
+  </article>
+</section>
+{% endblock %}

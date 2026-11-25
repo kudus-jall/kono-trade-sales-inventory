@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Supplier return {{ supplier_return.reference }}{% endblock %}
+{% block content %}
+<div class="page-heading no-print"><div><div class="eyebrow">SUPPLIER RETURN RECORD</div><h1>Return receipt</h1></div><div><a class="button button-quiet" href="{{ url_for('supplier_return_receipt_pdf', return_id=supplier_return.id) }}">Download PDF</a> <button class="button button-primary" onclick="window.print()">Print receipt</button></div></div>
+<article class="receipt">
+  <div class="receipt-head">{% if g.user.business_logo_filename %}<img class="receipt-logo" src="{{ url_for('business_logo') }}" alt="Business logo">{% else %}<div class="brand-mark">K</div>{% endif %}<h1>{{ g.user.business_name }}</h1><p>{{ g.user.business_address }}{% if g.user.business_address and g.user.business_phone %} · {% endif %}{{ g.user.business_phone }}</p></div>
+  <div class="receipt-meta"><span>Return <b>{{ supplier_return.reference }}</b></span><span>{{ supplier_return.created_at[:16].replace('T', ' ') }}</span></div>
+  <p><b>Original purchase:</b> {{ supplier_return.purchase_reference }}<br><b>Supplier:</b> {{ supplier_return.supplier_name }}<br><b>Product:</b> {{ supplier_return.product_name }} · {{ supplier_return.quantity|quantity }} {{ supplier_return.unit_name }}<br><b>Adjustment:</b> {{ supplier_return.adjustment_type|replace('_', ' ') }}<br><b>Reason:</b> {{ supplier_return.reason }}<br><b>Recorded by:</b> {{ supplier_return.recorded_by }}</p>
+  <div class="receipt-totals"><div><span>Return value</span><b>{{ supplier_return.amount_minor|money }}</b></div></div>
+  <p class="receipt-thanks">Supplier return recorded in the business activity history.</p>
+</article>
+{% endblock %}

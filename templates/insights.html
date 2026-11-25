@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Business insights{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">PRIVATE BUSINESS INTELLIGENCE</div><h1>Business insights</h1><p class="muted">Application-computed figures and read-only explanations from this business's recorded data.</p></div><span class="badge {{ 'badge-amber' if ai_available else 'badge-green' }}">{{ 'External AI enabled by Owner/Admin' if ai_available else 'Local only · no external AI request' }}</span></div>
+<section class="panel">
+  <div class="panel-heading"><div><h2>Ask about your records</h2><p class="muted">Try “How much profit did we make?”, “Which products are low on stock?” or “Which products sell the most?”</p></div></div>
+  <form method="post" class="insight-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label class="insight-question">Your question<input name="question" value="{{ question }}" maxlength="300" placeholder="Ask a question about sales, stock, debt or expenses..." required></label>
+    <label>From<input type="date" name="start" value="{{ start }}" required></label>
+    <label>To<input type="date" name="end" value="{{ end }}" required></label>
+    <div class="insight-actions"><button class="button button-quiet" name="mode" value="local" type="submit">Ask locally</button>{% if ai_available %}<button class="button button-primary" name="mode" value="ai" type="submit">Ask with AI</button>{% else %}<button class="button button-primary" type="button" disabled title="Configure and enable AI in Business settings">AI unavailable</button>{% endif %}</div>
+  </form>
+  {% if answer %}<div class="insight-answer"><b>Answer · data period {{ start }} to {{ end }}</b><p>{{ answer }}</p><small>Calculated from business records. This assistant does not change records or provide accounting advice.</small></div>{% endif %}
+  {% if ai_narrative %}<div class="insight-answer"><b>AI explanation · data period {{ start }} to {{ end }}</b><p>{{ ai_narrative }}</p><small>The app-computed figures above remain authoritative. This narrative is uncertain when records are incomplete or seasonal and is not accounting advice.</small></div>{% endif %}
+</section>
+<section class="panel section-gap trend-panel"><b>Sales comparison</b><p>Compared with the preceding period, recorded net sales {% if revenue_change > 0 %}increased{% elif revenue_change < 0 %}decreased{% else %}did not change{% endif %} by <strong>{{ revenue_change|abs|money }}</strong>. Previous period: {{ previous_period.revenue|money }}.</p><small>Comparisons use {{ start }} to {{ end }} and the immediately preceding period of equal length.</small></section>
+<section class="stat-grid section-gap">
+  <article class="stat-card"><span>{{ "Net sales in selected period" if owner else "Your sales in selected period" }}</span><strong>{{ period.revenue|money }}</strong><small>{{ period.sale_count }} recorded completed sales · {{ start }} to {{ end }}</small></article>
+  {% if owner %}
+  <article class="stat-card"><span>Estimated net profit</span><strong>{{ period.profit|money }}</strong><small>After recorded operating expenses; before tax</small></article>
+  <article class="stat-card"><span>Customer balances</span><strong>{{ customer_balances_total|money }}</strong><small>Calculated from sales, payments and returns</small></article>
+  <article class="stat-card"><span>Supplier balances</span><strong>{{ supplier_balances_total|money }}</strong><small>Purchases less recorded supplier payments</small></article>
+  {% else %}
+  <article class="stat-card"><span>Product stock alerts</span><strong>{{ low_stock|length }}</strong><small>Visible operational stock warnings</small></article>
+  {% endif %}
+</section>
+<section class="content-grid">
+  <article class="panel"><div class="panel-heading"><div><h2>Stock outlook</h2><p class="muted">Based on {{ forecast_start }} to {{ forecast_end }} (30 days)</p></div></div>
+    {% if forecast %}<div class="table-wrap"><table><thead><tr><th>Product</th><th>Available</th><th>Sold, net of resellable returns</th><th>Estimated days left</th><th>Attention</th></tr></thead><tbody>
+      {% for item in forecast %}<tr><td>{{ item.name }}</td><td>{{ item.stock|quantity }} {{ item.unit }}</td><td>{{ item.sold|quantity }}</td><td>{{ "%.1f"|format(item.days) if item.days is not none else "Insufficient sales data" }}</td><td>{% if item.low %}<span class="badge badge-amber">Below reorder level</span>{% elif item.days is not none and item.days <= 7 %}<span class="badge badge-amber">May run low soon</span>{% else %}<span class="badge badge-green">No immediate alert</span>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<div class="empty-state">There is not enough recent sales activity to estimate stock run-out. Record more sales to improve the estimate.</div>{% endif %}
+    <p class="report-note">Run-out estimates assume the last 30 days of recorded demand continue steadily. They are indicative only, especially where records are incomplete or sales are seasonal.</p>
+  </article>
+  <article class="panel"><div class="panel-heading"><div><h2>Fast-moving products</h2><p class="muted">Last 30 days · estimated net quantity sold</p></div></div>
+    {% if top_products %}<ul class="stock-list">{% for item in top_products %}<li><span><b>{{ item.name }}</b><small>{{ item.stock|quantity }} {{ item.unit }} available</small></span><span class="amount">{{ item.sold_quantity|quantity }}<small>units sold</small></span></li>{% endfor %}</ul>{% else %}<div class="empty-state">Insufficient recent sales data to rank products.</div>{% endif %}
+  </article>
+</section>
+<p class="report-note">Local reports and forecasts continue to work without AI. External AI is optional and disabled by default; it is contacted only after owner consent and an explicit AI request. Predictions and AI explanations are not guarantees.</p>
+{% endblock %}

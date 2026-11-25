@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Supplier payments{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">SUPPLIER ACCOUNTS</div><h1>Supplier payments</h1><p class="muted">Record and review payments against supplier balances.</p></div></div>
+<section class="content-grid content-grid-form">
+  <article class="panel"><div class="panel-heading"><h2>Pay a supplier</h2></div>
+    {% if suppliers %}<form method="post" class="form-stack">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="request_key" value="{{ request_key }}">
+      <label>Supplier *<select name="supplier_id" required>{% for supplier in suppliers %}<option value="{{ supplier.id }}">{{ supplier.name }} · owes {{ supplier.balance|money }}</option>{% endfor %}</select></label>
+      <label>Amount *<input name="amount" type="number" step="0.01" min="0.01" required></label>
+      <label>Payment method<select name="method">{% for method in ['Cash', 'Orange Money', 'Mobile Money', 'Bank Transfer', 'Other'] %}<option>{{ method }}</option>{% endfor %}</select></label>
+      <button class="button button-primary" type="submit">Record payment</button>
+    </form>{% else %}<div class="empty-state">No supplier balances are currently outstanding.</div>{% endif %}
+  </article>
+  <article class="panel"><div class="panel-heading"><h2>Supplier balances</h2></div>
+    {% if suppliers %}<div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Outstanding balance</th></tr></thead><tbody>{% for supplier in suppliers %}<tr><td>{{ supplier.name }}</td><td class="amount">{{ supplier.balance|money }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">All supplier accounts are settled.</div>{% endif %}
+  </article>
+</section>
+<section class="panel section-gap"><div class="panel-heading"><h2>Payment history</h2></div>
+  {% if history %}<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Supplier</th><th>Amount</th><th>Method</th><th>Paid by</th><th>Date</th><th></th></tr></thead><tbody>
+    {% for payment in history %}<tr><td>{{ payment.reference }}</td><td>{{ payment.supplier_name }}</td><td class="amount">{{ payment.amount_minor|money }}</td><td>{{ payment.method }}</td><td>{{ payment.paid_by }}</td><td>{{ payment.created_at[:16].replace('T', ' ') }}</td><td><a href="{{ url_for('supplier_payment_receipt', payment_id=payment.id) }}">Receipt</a></td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty-state">Supplier payments will appear here.</div>{% endif %}
+</section>
+{% endblock %}

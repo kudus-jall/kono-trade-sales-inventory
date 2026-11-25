@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sales{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">POINT OF SALE</div><h1>Sales</h1><p class="muted">Record a sale, take a payment and give the customer a receipt.</p></div></div>
+<section class="panel"><div class="panel-heading"><h2>New sale</h2></div>
+  {% if products %}<form method="post" class="form-grid form-grid-compact"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="request_key" value="{{ request_key }}">
+    <label>Product and sale unit *<select name="sale_unit_id" required>{% for p in products %}<option value="{{ p.sale_unit_id }}">{{ p.name }} · sell by {{ p.unit_name }}{% if p.unit_name != p.unit %} (1 {{ p.unit_name }} = {{ p.to_base_factor }} {{ p.unit }}){% endif %} · {{ p.stock|quantity }} {{ p.unit }} in stock · {{ p.unit_price_minor|money }}</option>{% endfor %}</select></label>
+    <label>Customer<select name="customer_id"><option value="">Walk-in customer</option>{% for c in customers %}<option value="{{ c.id }}">{{ c.name }}{% if c.phone %} · {{ c.phone }}{% endif %}</option>{% endfor %}</select></label>
+    <label>Quantity *<input name="quantity" type="number" step="0.001" min="0.001" required></label>
+    <label>Discount<input name="discount" type="number" step="0.01" min="0" value="0"></label>
+    <label>Credit due date<input name="due_date" type="date"><small>Optional; owner-only reminder if the customer balance remains outstanding.</small></label>
+    <div class="form-full payment-parts"><span class="field-label">Payments received (split payment is optional)</span>
+      {% for index in range(3) %}<div class="payment-part"><label>Amount {{ index + 1 }}<input name="payment_amount" type="number" step="0.01" min="0" value="0"></label><label>Method<select name="payment_method">{% for method in ['Cash', 'Orange Money', 'Mobile Money', 'Bank Transfer', 'Other'] %}<option>{{ method }}</option>{% endfor %}</select></label></div>{% endfor %}
+      <small>Enter one or more payment amounts. Their combined total cannot exceed the sale total. Leave unused amounts at zero.</small>
+    </div>
+    <button class="button button-primary form-full" type="submit">Complete sale</button>
+  </form>{% else %}<div class="empty-state">No available products in stock. Ask the owner to add stock before selling.</div>{% endif %}
+</section>
+<section class="panel section-gap"><div class="panel-heading"><div><h2>Recent transactions</h2><p class="muted">{% if g.user.role == 'owner' %}All staff sales{% else %}Your sales{% endif %}</p></div></div>
+  {% if sales %}<div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Product</th><th>Customer</th><th>Seller</th><th>Total</th><th>Paid</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for sale in sales %}<tr><td>{{ sale.reference }}</td><td>{{ sale.product_name }}<small>{{ sale.quantity|quantity }} {{ sale.unit }}</small>{% if sale.void_reason %}<small>Void reason: {{ sale.void_reason }}</small>{% endif %}</td><td>{{ sale.customer_name or "Walk-in" }}</td><td>{{ sale.seller }}</td><td class="amount">{{ sale.total_minor|money }}</td><td>{{ sale.paid_minor|money }}</td><td><span class="badge {{ 'badge-muted' if sale.status == 'void' else 'badge-green' }}">{{ sale.status }}</span></td><td><a href="{{ url_for('receipt', sale_id=sale.id) }}">Receipt</a>{% if g.user.role == 'owner' and sale.status == 'completed' %}<form method="post" action="{{ url_for('void_sale', sale_id=sale.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><label>Void reason *<input name="reason" maxlength="500" required></label><button class="link-button" type="submit">Void sale</button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty-state">No sales recorded yet.</div>{% endif %}
+</section>
+{% endblock %}

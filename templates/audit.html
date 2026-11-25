@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Activity log{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">ACCOUNTABILITY</div><h1>Activity log</h1><p class="muted">Recent important actions across your business.</p></div></div>
+<section class="panel">{% if entries %}<div class="table-wrap"><table><thead><tr><th>Date</th><th>User</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody>{% for e in entries %}<tr><td>{{ e.created_at[:16].replace('T', ' ') }}</td><td>{{ e.full_name }}</td><td>{{ e.action }}</td><td>{{ e.entity }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}</td><td>{{ e.details }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">Recorded activities will appear here.</div>{% endif %}</section>
+{% endblock %}

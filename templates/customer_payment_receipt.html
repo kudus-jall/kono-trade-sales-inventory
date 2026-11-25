@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Customer payment {{ payment.reference }}{% endblock %}
+{% block content %}
+<div class="page-heading no-print"><div><div class="eyebrow">CUSTOMER PAYMENT RECEIPT</div><h1>Payment receipt</h1></div><div><a class="button button-quiet" href="{{ url_for('customer_payment_receipt_pdf', payment_id=payment.id) }}">Download PDF</a> <button class="button button-primary" onclick="window.print()">Print receipt</button></div></div>
+<article class="receipt">
+  <div class="receipt-head">{% if g.user.business_logo_filename %}<img class="receipt-logo" src="{{ url_for('business_logo') }}" alt="Business logo">{% else %}<div class="brand-mark">K</div>{% endif %}<h1>{{ g.user.business_name }}</h1><p>{{ g.user.business_address }}{% if g.user.business_address and g.user.business_phone %} · {% endif %}{{ g.user.business_phone }}</p></div>
+  <div class="receipt-meta"><span>Reference <b>{{ payment.reference }}</b></span><span>{{ payment.created_at[:16].replace('T', ' ') }}</span></div>
+  <p><b>Received from:</b> {{ payment.customer_name }}{% if payment.customer_phone %} · {{ payment.customer_phone }}{% endif %}<br><b>Received by:</b> {{ payment.received_by }}</p>
+  <div class="receipt-totals"><div><span>Payment method</span><b>{{ payment.method }}</b></div><div><span>Amount received</span><b>{{ payment.amount_minor|money }}</b></div></div>
+  <p class="receipt-thanks">Customer payment recorded.</p>
+</article>
+{% endblock %}

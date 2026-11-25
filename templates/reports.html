@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">BUSINESS PERFORMANCE</div><h1>Reports</h1><p class="muted">Financial summary from recorded business transactions.</p></div><button class="button button-quiet no-print" onclick="window.print()">Print report</button></div>
+<form class="filter-bar no-print" method="get"><label>From<input type="date" name="start" value="{{ start }}"></label><label>To<input type="date" name="end" value="{{ end }}"></label><button class="button button-primary" type="submit">Apply dates</button></form>
+<section class="panel no-print export-panel"><div class="panel-heading"><div><h2>Download data</h2><p class="muted">CSV files open in Excel and other spreadsheet apps. Historical exports use this report's date range. Inventory and customer/supplier balances are current snapshots.</p></div></div><div class="export-links">{% for dataset in ['sales', 'purchases', 'sales-returns', 'supplier-returns', 'supplier-payments', 'inventory', 'customers', 'suppliers', 'expenses', 'payments'] %}<a class="button button-quiet" href="{{ url_for('export_csv', dataset=dataset, start=start, end=end) }}">{{ dataset|replace('-', ' ')|capitalize }} CSV ↓</a>{% endfor %}</div></section>
+<p class="muted">Report period: {{ start }} to {{ end }}</p>
+<section class="stat-grid">
+  <article class="stat-card"><span>Sales revenue</span><strong>{{ summary.revenue|money }}</strong><small>{{ summary.sale_count }} completed sales</small></article>
+  <article class="stat-card"><span>Cost of goods sold</span><strong>{{ summary.cost|money }}</strong><small>Weighted average cost estimate</small></article>
+  <article class="stat-card"><span>Operating expenses</span><strong>{{ expense_total|money }}</strong><small>Recorded expenses</small></article>
+  <article class="stat-card"><span>Estimated net profit</span><strong>{{ net_profit|money }}</strong><small>Before tax; based on recorded transactions</small></article>
+</section>
+<section class="panel"><div class="panel-heading"><h2>Current inventory</h2></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>SKU</th><th>Quantity</th><th>Unit cost</th><th>Estimated stock value</th></tr></thead><tbody>{% for p in products %}<tr><td>{{ p.name }}</td><td>{{ p.sku }}</td><td>{{ p.stock|quantity }} {{ p.unit }}</td><td>{{ p.cost_minor|money }}</td><td>{{ ((p.stock * p.cost_minor)|round|int)|money }}</td></tr>{% else %}<tr><td colspan="5">No active products.</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="panel section-gap"><div class="panel-heading"><h2>Sales in this period</h2></div>{% if sales %}<div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Date</th><th>Product</th><th>Customer</th><th>Seller</th><th>Revenue</th><th>Gross profit</th></tr></thead><tbody>{% for s in sales %}<tr><td>{{ s.reference }}</td><td>{{ s.created_at[:10] }}</td><td>{{ s.product_name }}</td><td>{{ s.customer_name or "Walk-in" }}</td><td>{{ s.seller }}</td><td>{{ s.total_minor|money }}</td><td>{{ (s.total_minor - s.cost_minor)|money }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">No sales for the selected dates.</div>{% endif %}</section>
+<p class="report-note">Customer balances are shown on the Customers page. Figures are estimates based on records entered into this system.</p>
+{% endblock %}

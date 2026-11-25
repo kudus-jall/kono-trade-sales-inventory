@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<section class="login-layout" aria-label="Sign in to Kono Trade">
+  <div class="login-story">
+    <a class="login-brand" href="{{ url_for('login') }}" aria-label="Kono Trade home">
+      <span class="login-brand-mark" aria-hidden="true">K</span>
+      <span>Kono Trade</span>
+    </a>
+
+    <div class="login-story-copy">
+      <p class="login-kicker"><span></span> YOUR BUSINESS, IN BETTER VIEW</p>
+      <h1>A steadier way to run the shop.</h1>
+      <p class="login-intro">Keep sales, stock, customer credit and daily expenses moving together in one clear workspace.</p>
+      <div class="login-benefits" aria-label="What you can manage">
+        <div><span class="benefit-icon" aria-hidden="true">↗</span><span><b>Sales that add up</b><small>See each day with clarity.</small></span></div>
+        <div><span class="benefit-icon" aria-hidden="true">▦</span><span><b>Stock in view</b><small>Know what needs attention.</small></span></div>
+        <div><span class="benefit-icon" aria-hidden="true">◎</span><span><b>Customers and credit</b><small>Keep track of balances due.</small></span></div>
+        <div><span class="benefit-icon" aria-hidden="true">▤</span><span><b>Business records</b><small>Keep the details together.</small></span></div>
+      </div>
+    </div>
+
+    <div class="shop-illustration" aria-hidden="true">
+      <div class="illustration-sun"></div>
+      <div class="illustration-shelf shelf-top"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="illustration-shelf shelf-bottom"><i></i><i></i><i></i><i></i></div>
+      <div class="illustration-counter"></div>
+      <div class="illustration-leaf leaf-one"></div>
+      <div class="illustration-leaf leaf-two"></div>
+      <div class="illustration-caption">A little more order. A lot more room to grow.</div>
+    </div>
+    <p class="login-location">Made for the everyday rhythm of Sierra Leone businesses.</p>
+  </div>
+
+  <div class="login-panel-wrap">
+    <div class="login-panel">
+      <div class="login-panel-mark" aria-hidden="true">✳</div>
+      <p class="login-panel-kicker">WELCOME BACK</p>
+      <h2>Good to see you.</h2>
+      <p class="login-panel-intro">Sign in to pick up where your business left off.</p>
+      <form method="post" class="form-stack login-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label>Username<input name="username" autocomplete="username" placeholder="Enter your username" required autofocus></label>
+        <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+        <button class="button button-primary button-wide login-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="login-forgot"><a href="{{ url_for('forgot_password') }}">Forgot your password?</a></p>
+      <div class="login-divider"><span>NEW TO KONO TRADE?</span></div>
+      <a class="login-create" href="{{ url_for('register') }}">Create your business account <span aria-hidden="true">↗</span></a>
+      <p class="login-secure"><span aria-hidden="true">◈</span> Your workspace is private to your business.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

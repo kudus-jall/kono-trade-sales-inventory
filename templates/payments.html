@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">CUSTOMER CREDIT</div><h1>Payments received</h1><p class="muted">Record payments against outstanding customer balances.</p></div></div>
+<section class="content-grid content-grid-form">
+  <article class="panel"><div class="panel-heading"><h2>Receive payment</h2></div>
+    {% if debtors %}
+    <form method="post" class="form-stack">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="request_key" value="{{ request_key }}">
+      <label>Customer *
+        <select name="customer_id" required>
+          {% for c in debtors %}<option value="{{ c.id }}">{{ c.name }}{% if g.user.role == 'owner' %} · owes {{ c.balance|money }}{% endif %}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Amount *<input name="amount" type="number" min="0.01" step="0.01" required></label>
+      <label>Payment method
+        <select name="method">{% for method in ['Cash', 'Orange Money', 'Mobile Money', 'Bank Transfer', 'Other'] %}<option>{{ method }}</option>{% endfor %}</select>
+      </label>
+      <button class="button button-primary" type="submit">Record payment</button>
+    </form>
+    {% else %}<div class="empty-state">No customer balances are currently outstanding.</div>{% endif %}
+  </article>
+  {% if g.user.role == 'owner' %}
+  <article class="panel"><div class="panel-heading"><h2>Outstanding balances</h2></div>{% if debtors %}<div class="table-wrap"><table><thead><tr><th>Customer</th><th>Balance</th></tr></thead><tbody>{% for c in debtors %}<tr><td>{{ c.name }}</td><td class="amount">{{ c.balance|money }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">All caught up.</div>{% endif %}</article>
+  {% else %}
+  <article class="panel"><div class="empty-state">Customer balance amounts are restricted to the Owner/Admin. Only customers with an outstanding balance are listed.</div></article>
+  {% endif %}
+</section>
+<section class="panel section-gap"><div class="panel-heading"><h2>Payment history</h2></div>{% if payments %}<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Customer</th><th>Amount</th><th>Method</th><th>Received by</th><th>Date</th><th>Receipt</th></tr></thead><tbody>{% for p in payments %}<tr><td>{{ p.reference }}</td><td>{{ p.customer_name or "Walk-in" }}</td><td class="amount">{{ p.amount_minor|money }}</td><td>{{ p.method }}</td><td>{{ p.received_by }}</td><td>{{ p.created_at[:16].replace('T', ' ') }}</td><td>{% if p.customer_id %}<a href="{{ url_for('customer_payment_receipt', payment_id=p.id) }}">View / PDF</a>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state">Payments will appear here.</div>{% endif %}</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Business settings{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">BUSINESS PROFILE</div><h1>Business settings</h1><p class="muted">Update the identity shown on receipts and choose the currency for this demo business.</p></div></div>
+<section class="panel">
+  <form method="post" enctype="multipart/form-data" class="form-grid">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {% if has_transactions %}<input type="hidden" name="currency" value="{{ business.currency }}">{% endif %}
+    <label>Business name *<input name="name" value="{{ business.name }}" maxlength="120" required></label>
+    <label>Business type *<input name="business_type" value="{{ business.business_type }}" maxlength="120" required></label>
+    <label>Phone number *<input name="phone" type="tel" value="{{ business.phone }}" maxlength="40" required></label>
+    <label>Business address<input name="address" value="{{ business.address }}" maxlength="240"></label>
+    <label>Preferred currency
+      <select name="{% if has_transactions %}currency_display{% else %}currency{% endif %}" {% if has_transactions %}disabled{% endif %}>
+        {% for code, label in currencies.items() %}<option value="{{ code }}" {% if business.currency == code %}selected{% endif %}>{{ code }} · {{ label }}</option>{% endfor %}
+      </select>
+      {% if has_transactions %}<small>Locked because financial transactions exist. Create a fresh demo business to use another currency.</small>{% else %}<small>Choose the currency before recording sales, purchases, payments, returns, or expenses.</small>{% endif %}
+    </label>
+    <label>Business logo (PNG or JPEG, max 2 MB)<input name="logo" type="file" accept="image/png,image/jpeg"></label>
+    {% if business.business_logo_filename %}
+      <div class="form-full business-logo-preview"><span>Current logo</span><img src="{{ url_for('business_logo') }}" alt="Current business logo"><label class="checkbox-label"><input type="checkbox" name="remove_logo" value="1">Remove current logo</label></div>
+    {% endif %}
+    <p class="form-full report-note">Changing the currency after financial records exist is intentionally blocked. The system does not convert or relabel recorded amounts.</p>
+    <button class="button button-primary form-full" type="submit">Save business settings</button>
+  </form>
+</section>
+<section class="panel section-gap">
+  <div class="panel-heading"><div><h2>Optional generative AI insights</h2><p class="muted">{% if ai_provider_configured %}Provider configuration detected in the server environment.{% else %}No provider is configured; AI remains unavailable.{% endif %}</p></div><span class="badge {{ 'badge-green' if business.ai_insights_enabled else 'badge-muted' }}">{{ 'Enabled' if business.ai_insights_enabled else 'Disabled' }}</span></div>
+  <div class="insight-answer">
+    <b>External data-sharing notice</b>
+    <p>If enabled, a user's explicit “Ask with AI” action sends the selected date period, an allow-listed topic, currency, and application-computed aggregate sales/stock metrics to the configured external provider. Owners' requests may also include aggregate profit, expense, and combined customer/supplier balance totals. Attendant requests exclude those owner-only financial fields and use only that attendant's sales totals plus shared stock counts.</p>
+    <p>No business or person names, contact details, account-level records, product names, transaction rows, IDs, credentials, or the user's free-text question are sent. The app computes and displays all figures; AI output is narrative-only, and responses containing numbers are discarded. The provider may process submitted aggregates under its own terms and may charge usage fees.</p>
+    <p>AI is disabled by default. Local, non-AI insights and reports continue to work if AI is disabled or unavailable. AI explanations may be inaccurate and are not accounting advice.</p>
+  </div>
+  {% if not ai_provider_configured %}<p class="report-note">Configure AI_PROVIDER, AI_API_KEY, AI_BASE_URL, and AI_MODEL in the server environment before enabling.</p>{% endif %}
+  <form method="post" class="form-stack section-gap">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="settings_section" value="ai">
+    <label class="checkbox-label"><input type="checkbox" name="ai_insights_enabled" value="1" {% if business.ai_insights_enabled %}checked{% endif %}>Enable external AI insights for this business</label>
+    <label class="checkbox-label"><input type="checkbox" name="ai_data_consent" value="{{ ai_consent_version }}">I am the Owner/Admin and consent to sending the described role-filtered aggregates when a user explicitly requests AI.</label>
+    <button class="button button-primary" type="submit">Save AI preference</button>
+  </form>
+</section>
+{% endblock %}

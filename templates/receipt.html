@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ sale.reference }}{% endblock %}
+{% block content %}
+<div class="page-heading no-print"><div><div class="eyebrow">TRANSACTION RECEIPT</div><h1>Sale receipt</h1></div><div><a class="button button-quiet" href="{{ url_for('sale_receipt_pdf', sale_id=sale.id) }}">Download PDF</a> <button class="button button-primary" onclick="window.print()">Print receipt</button></div></div>
+<article class="receipt">
+  {% if sale.status == 'void' %}<div class="flash error"><b>VOIDED</b> · {{ sale.void_reason }}</div>{% endif %}
+  <div class="receipt-head">{% if g.user.business_logo_filename %}<img class="receipt-logo" src="{{ url_for('business_logo') }}" alt="Business logo">{% else %}<div class="brand-mark">K</div>{% endif %}<h1>{{ g.user.business_name }}</h1><p>{{ g.user.business_address }}{% if g.user.business_address and g.user.business_phone %} · {% endif %}{{ g.user.business_phone }}</p></div>
+  <div class="receipt-meta"><span>Receipt <b>{{ sale.reference }}</b></span><span>{{ sale.created_at[:16].replace('T', ' ') }}</span></div>
+  <p><b>Customer:</b> {{ sale.customer_name or "Walk-in customer" }}{% if sale.customer_phone %} · {{ sale.customer_phone }}{% endif %}<br><b>Served by:</b> {{ sale.seller }}</p>
+  <div class="table-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody><tr><td>{{ sale.product_name }}</td><td>{{ sale.quantity|quantity }} {{ sale.unit }}</td><td>{{ sale.unit_price_minor|money }}</td><td class="amount">{{ (sale.unit_price_minor * sale.quantity)|round|int|money }}</td></tr></tbody></table></div>
+  <div class="receipt-totals"><div><span>Discount</span><b>{{ sale.discount_minor|money }}</b></div><div><span>Total</span><b>{{ sale.total_minor|money }}</b></div><div><span>Paid</span><b>{{ sale.paid_minor|money }}</b></div><div><span>Balance</span><b>{{ (sale.total_minor - sale.paid_minor)|money }}</b></div></div>
+  {% if payment_rows %}<div class="section-gap"><b>Payment breakdown</b><div class="table-wrap"><table><thead><tr><th>Method</th><th>Reference</th><th>Amount</th></tr></thead><tbody>{% for payment in payment_rows %}<tr><td>{{ payment.method }}</td><td>{{ payment.reference }}</td><td class="amount">{{ payment.amount_minor|money }}</td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
+  <p class="receipt-thanks">Thank you for your business.</p>
+</article>
+{% endblock %}
