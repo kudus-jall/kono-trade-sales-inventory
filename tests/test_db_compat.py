@@ -2,7 +2,13 @@ import unittest
 from types import SimpleNamespace
 
 from backup_db import postgres_environment, postgres_database_name
-from db_compat import HybridRow, PostgresConnection, postgres_schema, postgres_sql
+from db_compat import (
+    HybridRow,
+    PostgresConnection,
+    postgres_row_factory,
+    postgres_schema,
+    postgres_sql,
+)
 
 
 class PostgresCompatibilityTests(unittest.TestCase):
@@ -45,6 +51,23 @@ class PostgresCompatibilityTests(unittest.TestCase):
         self.assertEqual(row["name"], "Kono")
         self.assertEqual(row[0], "Kono")
         self.assertEqual(dict(row), {"name": "Kono", "id": 7})
+
+    def test_postgres_row_factory_handles_commands_without_result_columns(self):
+        cursor = SimpleNamespace(description=None)
+        make_row = postgres_row_factory(cursor)
+        self.assertIsNone(make_row(()))
+
+    def test_postgres_row_factory_preserves_named_and_positional_query_rows(self):
+        cursor = SimpleNamespace(
+            description=[
+                SimpleNamespace(name="name"),
+                SimpleNamespace(name="id"),
+            ]
+        )
+        row = postgres_row_factory(cursor)(("Kono Trade", 7))
+        self.assertEqual(row["name"], "Kono Trade")
+        self.assertEqual(row[0], "Kono Trade")
+        self.assertEqual(row["id"], 7)
 
     def test_postgres_connection_returns_generated_id_and_converts_boolean_values(self):
         class FakeCursor:
