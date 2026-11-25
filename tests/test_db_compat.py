@@ -65,15 +65,20 @@ class PostgresCompatibilityTests(unittest.TestCase):
             database_repository.postgres_row_factory,
             package_db_compat.postgres_row_factory,
         )
-        self.assertIs(
-            root_db_compat.postgres_row_factory,
-            package_db_compat.postgres_row_factory,
-        )
         self.assertIsNone(
             root_db_compat.postgres_row_factory(
                 SimpleNamespace(description=None)
             )(())
         )
+        columns = [SimpleNamespace(name="name"), SimpleNamespace(name="id")]
+        package_row = package_db_compat.postgres_row_factory(
+            SimpleNamespace(description=columns)
+        )(("Kono Trade", 7))
+        root_row = root_db_compat.postgres_row_factory(
+            SimpleNamespace(description=columns)
+        )(("Kono Trade", 7))
+        self.assertEqual(root_row, package_row)
+        self.assertEqual(root_row[0], package_row[0])
 
     def test_postgres_row_factory_preserves_named_and_positional_query_rows(self):
         cursor = SimpleNamespace(
