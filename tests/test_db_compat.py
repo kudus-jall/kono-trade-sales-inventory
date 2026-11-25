@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 
 from backup_db import postgres_environment, postgres_database_name
+import db_compat as root_db_compat
 from db_compat import (
     HybridRow,
     PostgresConnection,
@@ -9,6 +10,8 @@ from db_compat import (
     postgres_schema,
     postgres_sql,
 )
+from kono_trade.repositories import database as database_repository
+from kono_trade.repositories import db_compat as package_db_compat
 
 
 class PostgresCompatibilityTests(unittest.TestCase):
@@ -56,6 +59,21 @@ class PostgresCompatibilityTests(unittest.TestCase):
         cursor = SimpleNamespace(description=None)
         make_row = postgres_row_factory(cursor)
         self.assertIsNone(make_row(()))
+
+    def test_application_and_root_compatibility_imports_share_the_safe_factory(self):
+        self.assertIs(
+            database_repository.postgres_row_factory,
+            package_db_compat.postgres_row_factory,
+        )
+        self.assertIs(
+            root_db_compat.postgres_row_factory,
+            package_db_compat.postgres_row_factory,
+        )
+        self.assertIsNone(
+            root_db_compat.postgres_row_factory(
+                SimpleNamespace(description=None)
+            )(())
+        )
 
     def test_postgres_row_factory_preserves_named_and_positional_query_rows(self):
         cursor = SimpleNamespace(
