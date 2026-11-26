@@ -52,12 +52,21 @@ Configure `DATABASE_URL` and a long random `SECRET_KEY` in Render's environment 
 
 Render's local filesystem may be ephemeral. Business logos currently live under `instance\uploads`; configure persistent storage or move uploads to private object storage before relying on logos in a hosted service. This repository does not deploy the app, create Supabase resources, configure secrets, or connect to a hosted database.
 
+### Load fictional presentation data into a new business
+
+To prepare a presentation on the hosted app, first push the code to the GitHub branch connected to Render. In Render, confirm the deploy uses the new commit (or choose **Manual Deploy → Deploy latest commit**). Do not replace the existing `DATABASE_URL` or create a new database if you want to preserve the current live business.
+
+After deployment, open the live app's registration page and register a **new business workspace** using a new owner account and a unique username. Sign in as that owner, open **Settings**, and select **Review and load presentation sample data**. Review the confirmation and explicitly check the confirmation box to load. The action is owner-only and is available only while that business has no products, customers, suppliers, purchases, sales, payments, returns, or expenses. It cannot be run twice for the same business.
+
+The generated fictional products, stock, customer/supplier records, transactions, payments, and expenses are labelled `DEMO`. The load is atomic and scoped to the new business; it does not alter another business or create data on startup. These records are for presentation purposes, not real bookkeeping, and are not automatically removed. Keep the existing live workspace and database configuration unchanged.
+
 Run the automated workflow checks with `python -m unittest discover -s tests -v`.
 
 ## Included in this MVP
 
 - Business registration, sign-in, password hashing, CSRF protection, and owner/attendant roles.
 - Business-scoped products, customers, suppliers, purchases, sales, customer payments, and expenses.
+- Owner-only, explicitly confirmed presentation sample data for an empty business workspace, with duplicate-load and existing-record guards.
 - Inventory updates on purchases and sales; purchase entries update weighted average unit cost.
 - Product-specific purchase/sale units convert into a stored base-stock unit (for example 1 bag = 50 kg). Conversion factors are snapshotted on transactions; purchase cost is entered per selected purchase unit and alternate selling prices are derived from the base-unit price.
 - Credit balances, unique transaction references, printable receipts, basic reports, and an owner-only activity log.

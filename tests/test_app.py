@@ -893,6 +893,194 @@ class SalesSystemTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
 
+    def test_owner_can_load_presentation_sample_data_once_for_empty_business(self):
+        self.register_owner()
+        confirmation = self.client.get("/presentation-samples")
+        self.assertEqual(confirmation.status_code, 200)
+        self.assertIn(b"Confirm before adding records", confirmation.data)
+        self.assertIn(b"fictional", confirmation.data.lower())
+
+        missing_confirmation = self.post("/presentation-samples", {})
+        self.assertIn(b"Confirm the presentation sample data load", missing_confirmation.data)
+        db = sales_app.connect_db()
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM products").fetchone()[0], 0)
+        db.close()
+
+        response = self.post("/presentation-samples", {"confirm_load": "yes"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"presentation sample data was loaded", response.data)
+
+        db = sales_app.connect_db()
+        business = db.execute("SELECT id FROM businesses").fetchone()
+        business_id = business["id"]
+        expected_counts = {
+            "products": 3,
+            "product_units": 3,
+            "customers": 2,
+            "suppliers": 1,
+            "purchases": 3,
+            "sales": 3,
+            "payments": 6,
+            "expenses": 2,
+        }
+        for table, expected in expected_counts.items():
+            if table == "product_units":
+                actual = db.execute(
+                    """SELECT COUNT(*) FROM product_units
+                       JOIN products ON products.id = product_units.product_id
+                       WHERE products.business_id = ?""",
+                    (business_id,),
+                ).fetchone()[0]
+            else:
+                actual = db.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE business_id = ?",
+                    (business_id,),
+                ).fetchone()[0]
+            self.assertEqual(actual, expected, table)
+        self.assertEqual(
+            db.execute(
+                "SELECT COUNT(*) FROM products WHERE business_id = ? AND name LIKE 'DEMO - %'",
+                (business_id,),
+            ).fetchone()[0],
+            3,
+        )
+        self.assertEqual(
+            db.execute(
+                """SELECT COUNT(*) FROM purchases
+                   WHERE business_id = ? AND reference LIKE 'DEMO-PUR-%'""",
+                (business_id,),
+            ).fetchone()[0],
+            3,
+        )
+        self.assertEqual(
+            db.execute(
+                """SELECT COUNT(*) FROM sales
+                   WHERE business_id = ? AND reference LIKE 'DEMO-SAL-%'""",
+                (business_id,),
+            ).fetchone()[0],
+            3,
+        )
+        self.assertEqual(
+            db.execute(
+                """SELECT COUNT(*) FROM audit_logs
+                   WHERE business_id = ? AND entity = 'presentation_sample_data'
+                     AND action = 'loaded'""",
+                (business_id,),
+            ).fetchone()[0],
+            1,
+        )
+        self.assertEqual(
+            db.execute(
+                "SELECT SUM(total_minor) FROM sales WHERE business_id = ?",
+                (business_id,),
+            ).fetchone()[0],
+            62500,
+        )
+        self.assertEqual(
+            db.execute(
+                "SELECT SUM(amount_minor) FROM expenses WHERE business_id = ?",
+                (business_id,),
+            ).fetchone()[0],
+            13000,
+        )
+        self.assertEqual(db.execute("PRAGMA foreign_key_check").fetchall(), [])
+
+        second_load = self.post("/presentation-samples", {"confirm_load": "yes"})
+        self.assertIn(b"already been loaded", second_load.data)
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM products").fetchone()[0], 3)
+        db.close()
+
+    def test_presentation_sample_load_is_blocked_when_business_has_records(self):
+        self.register_owner()
+        self.post(
+            "/products",
+            {
+                "name": "Existing product",
+                "sku": "EXISTING-1",
+                "unit": "each",
+                "price": "2",
+                "cost": "1",
+                "stock": "0",
+                "reorder_level": "0",
+            },
+        )
+        response = self.post("/presentation-samples", {"confirm_load": "yes"})
+        self.assertIn(b"no operational records", response.data)
+        db = sales_app.connect_db()
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM products").fetchone()[0], 1)
+        for table in ("customers", "suppliers", "purchases", "sales", "payments", "expenses"):
+            self.assertEqual(db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0], 0, table)
+        db.close()
+
+    def test_attendant_cannot_load_presentation_sample_data(self):
+        self.register_owner()
+        self.post(
+            "/team",
+            {
+                "full_name": "Presentation Attendant",
+                "username": "presentation-attendant",
+                "password": "secure-staff-password",
+            },
+        )
+        with self.client.session_transaction() as browser_session:
+            browser_session.clear()
+        self.post(
+            "/login",
+            {"username": "presentation-attendant", "password": "secure-staff-password"},
+        )
+        self.assertEqual(self.client.get("/presentation-samples").status_code, 403)
+        denied = self.post("/presentation-samples", {"confirm_load": "yes"})
+        self.assertEqual(denied.status_code, 403)
+        db = sales_app.connect_db()
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM products").fetchone()[0], 0)
+        db.close()
+
+    def test_presentation_sample_records_are_scoped_to_the_requesting_business(self):
+        self.register_owner("first-sample-owner")
+        db = sales_app.connect_db()
+        first_business_id = db.execute(
+            "SELECT id FROM businesses WHERE name = 'Test Trading' ORDER BY id LIMIT 1"
+        ).fetchone()["id"]
+        db.close()
+
+        with self.client.session_transaction() as browser_session:
+            browser_session.clear()
+        self.register_owner("second-sample-owner")
+        db = sales_app.connect_db()
+        second_business_id = db.execute(
+            "SELECT id FROM businesses ORDER BY id DESC LIMIT 1"
+        ).fetchone()["id"]
+        db.close()
+
+        with self.client.session_transaction() as browser_session:
+            browser_session.clear()
+        self.post(
+            "/login",
+            {"username": "first-sample-owner", "password": "secure-test-password"},
+        )
+        self.post("/presentation-samples", {"confirm_load": "yes"})
+
+        db = sales_app.connect_db()
+        for table in ("products", "customers", "suppliers", "purchases", "sales", "payments", "expenses"):
+            self.assertGreater(
+                db.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE business_id = ?",
+                    (first_business_id,),
+                ).fetchone()[0],
+                0,
+                table,
+            )
+            self.assertEqual(
+                db.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE business_id = ?",
+                    (second_business_id,),
+                ).fetchone()[0],
+                0,
+                table,
+            )
+        db.close()
+
+
     def test_sidebar_navigation_is_grouped_active_and_role_scoped(self):
         self.register_owner()
         owner_dashboard = self.client.get("/")

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Presentation sample data{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">OWNER-ONLY ACTION</div>
+    <h1>Load presentation sample data</h1>
+    <p class="muted">All added records are fictional and clearly marked DEMO.</p>
+  </div>
+  <a class="button button-quiet" href="{{ url_for('business_settings') }}">Back to settings</a>
+</div>
+<section class="panel">
+  {% if samples_loaded %}
+    <h2>Sample data was already loaded</h2>
+    <p class="muted">To prevent duplicate sample records, this action cannot be run again for this business.</p>
+  {% elif can_load_samples %}
+    <h2>Confirm before adding records</h2>
+    <p>This will add fictional products and opening stock, customers, a supplier, purchases, sales, payments, and expenses to <strong>{{ g.user.business_name }}</strong>.</p>
+    <p>It is available only because this business currently has no operational records. The load is all-or-nothing. Existing accounts and business settings are preserved. Sample records are not automatically removed.</p>
+    <form method="post" class="form-stack section-gap">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label class="checkbox-label"><input type="checkbox" name="confirm_load" value="yes" required> I am the business owner and explicitly confirm loading fictional presentation data into this empty business.</label>
+      <button class="button button-primary" type="submit">Confirm and load sample data</button>
+    </form>
+  {% else %}
+    <h2>Sample data cannot be loaded</h2>
+    <p class="muted">This business already has operational records. No records have been changed. Create a new business workspace if you need a clean presentation dataset.</p>
+    <ul class="stock-list">
+      {% for table, count in operational_counts.items() if count %}
+        <li><span><b>{{ table|replace('_', ' ')|title }}</b><small>Existing operational records</small></span><span>{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}

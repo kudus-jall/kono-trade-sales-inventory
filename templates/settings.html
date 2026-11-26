@@ -25,6 +25,17 @@
   </form>
 </section>
 <section class="panel section-gap">
+  <div class="panel-heading"><div><h2>Presentation sample data</h2><p class="muted">Add clearly labelled fictional records to an empty business for a presentation.</p></div><span class="badge {{ 'badge-muted' if can_load_presentation_samples else 'badge-green' }}">{{ 'Available' if can_load_presentation_samples else 'Unavailable' }}</span></div>
+  {% if presentation_samples_loaded %}
+    <p class="report-note">Presentation sample data has already been loaded for this business. It cannot be loaded again.</p>
+  {% elif can_load_presentation_samples %}
+    <p class="muted">This owner-only action adds sample products, stock, customers, a supplier, purchases, sales, payments, and expenses. Records are labelled DEMO and are not automatically loaded.</p>
+    <a class="button button-primary" href="{{ url_for('presentation_samples') }}">Review and load presentation sample data</a>
+  {% else %}
+    <p class="report-note">Sample data is available only when this business has no products, customers, suppliers, purchases, sales, payments, returns, or expenses. Existing records will not be changed.</p>
+  {% endif %}
+</section>
+<section class="panel section-gap">
   <div class="panel-heading"><div><h2>Optional generative AI insights</h2><p class="muted">{% if ai_provider_configured %}Provider configuration detected in the server environment.{% else %}No provider is configured; AI remains unavailable.{% endif %}</p></div><span class="badge {{ 'badge-green' if business.ai_insights_enabled else 'badge-muted' }}">{{ 'Enabled' if business.ai_insights_enabled else 'Disabled' }}</span></div>
   <div class="insight-answer">
     <b>External data-sharing notice</b>
