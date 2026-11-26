@@ -10,6 +10,10 @@ from urllib.parse import urlsplit
 
 import app as sales_app
 import backup_db
+from kono_trade import create_app
+from kono_trade.repositories.database import connect_db
+from kono_trade.routes import auth as auth_routes, reports as reports_routes
+from seed_demo import DEMO_PASSWORD, seed_demo_database
 from cryptography.fernet import Fernet
 from PIL import Image
 
